@@ -1,0 +1,13 @@
+# Project exclude paths
+/.gradle/
+/Music Advisor/task/build/
+/Music Advisor/task/out/
+/Music Advisor/task/out/production/classes/
+/Problems/Coffee Decorator/out/
+/Problems/Coffee Decorator/out/production/classes/
+/Problems/Counting words/out/
+/Problems/Counting words/out/production/classes/
+/Problems/Displaying pairs/out/
+/Problems/Displaying pairs/out/production/classes/
+/Problems/Removing elements/out/
+/Problems/Removing elements/out/production/classes/
