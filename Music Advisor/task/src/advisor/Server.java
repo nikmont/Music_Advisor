@@ -1,7 +1,7 @@
 package advisor;
 
+import com.google.gson.*;
 import com.sun.net.httpserver.*;
-
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.URI;
@@ -10,6 +10,7 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 
 public class Server {
+
     public static String SERVER_PATH = "https://accounts.spotify.com";
     public static String CLIENT_ID = "5f40b38a1feb433bb7445b77a13393de";
     public static String CLIENT_SECRET = "6746238235184c2f9d431e6bedc5c046";
@@ -20,12 +21,19 @@ public class Server {
 
     HttpServer server;
 
-
-    public String getUri() {
+    private String getUri() {
         return SERVER_PATH + "/authorize"
                 + "?client_id=" + CLIENT_ID
                 + "&redirect_uri=" + REDIRECT_IP + REDIRECT_PORT
                 + "&response_type=code";
+    }
+
+    private HttpRequest createRequest(String uriString) {
+        return HttpRequest.newBuilder()
+                .header("Authorization", "Bearer " + ACCESS_TOKEN)
+                .uri(URI.create(uriString))
+                .GET()
+                .build();
     }
 
     public void getCode() {
@@ -70,13 +78,57 @@ public class Server {
         }
     }
 
+    public String getFeatured() {
+        HttpClient client = HttpClient.newBuilder().build();
+        HttpResponse<String> featured = null;
 
+        HttpRequest httpRequest = createRequest("https://api.spotify.com/v1/browse/featured-playlists");
+        try {
+            featured = client.send(httpRequest, HttpResponse.BodyHandlers.ofString());
+
+        } catch (IOException | InterruptedException e) {
+            System.out.println("Bad featured request");
+        }
+
+        return featured != null ? featured.body() : null;
+    }
+
+    public String getNewReleases() {
+        HttpClient client = HttpClient.newBuilder().build();
+        HttpResponse<String> releases = null;
+
+        HttpRequest httpRequest = createRequest("https://api.spotify.com/v1/browse/new-releases");
+        try {
+            releases = client.send(httpRequest, HttpResponse.BodyHandlers.ofString());
+
+        } catch (IOException | InterruptedException e) {
+            System.out.println("Bad releases request");
+        }
+
+        return releases != null ? releases.body() : null;
+    }
+
+    public String getPlaylist(String playlistName) {
+        HttpClient client = HttpClient.newBuilder().build();
+        HttpResponse<String> playlist = null;
+        String playlistURI = "https://api.spotify.com/v1/browse/categories/" + playlistName + "/playlists";
+
+        HttpRequest httpRequest = createRequest(playlistURI);
+        try {
+
+            playlist = client.send(httpRequest, HttpResponse.BodyHandlers.ofString());
+
+        } catch (IOException | InterruptedException e) {
+            System.out.println("Bad playlist request");
+        }
+
+        return playlist != null ? playlist.body() : null;
+    }
 
     public void getToken() {
         HttpClient client = HttpClient.newBuilder().build();
 
         System.out.println("making http request for access_token...\nresponse:");
-
         HttpRequest request = HttpRequest.newBuilder()
                 .header("Content-Type", "application/x-www-form-urlencoded")
                 .uri(URI.create(SERVER_PATH + "/api/token"))
@@ -88,12 +140,29 @@ public class Server {
                 .build();
         try {
             HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-            System.out.println(response.body());
-            //ACCESS_TOKEN = ;
-            System.out.println("---SUCCESS---");
+            String token = response.body();
+            JsonObject jo = JsonParser.parseString(token).getAsJsonObject();
+            ACCESS_TOKEN = jo.get("access_token").getAsString();
+
+            System.out.println("token is " + ACCESS_TOKEN);
+            System.out.println("Success!");
         } catch (IOException | InterruptedException e) {
             System.out.println("Error at request");
         }
     }
 
+    public String getCategories() {
+        HttpResponse<String> response = null;
+        HttpClient client = HttpClient.newBuilder().build();
+
+        HttpRequest httpRequest = createRequest("https://api.spotify.com/v1/browse/categories");
+        try {
+            response = client.send(httpRequest, HttpResponse.BodyHandlers.ofString());
+
+        } catch (IOException | InterruptedException e) {
+            System.out.println("Bad category request");
+        }
+
+        return response != null ? response.body() : null;
+    }
 }

@@ -1,5 +1,11 @@
 package advisor;
 
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Scanner;
 
 public class Main {
@@ -10,9 +16,7 @@ public class Main {
         if (args.length > 1 && "-access".equals(args[0])) {
             Server.SERVER_PATH = args[1];
         }
-
         setAction();
-
     }
 
     public static void setAction() {
@@ -32,19 +36,18 @@ public class Main {
                     isAuthorized = true;
                     break;
                 case "featured":
-                    getFeatured();
+                    getFeatured(server);
                     break;
                 case "new":
-                    newReleases();
+                    newReleases(server);
                     break;
                 case "categories":
-                    getCategories();
+                    getCategories(server);
                     break;
                 case "playlists":
-                    getPlaylists();
+                    getPlaylists(server);
                     break;
                 case "exit":
-                    exit();
                     return;
             }
         }
@@ -53,44 +56,58 @@ public class Main {
 
     public static void authorization(Server server) {
         server.getCode();
-
         server.getToken();
     }
 
-    public static void getPlaylists() {
-        String playlistName = scan.next();
-        System.out.println("---" + playlistName.toUpperCase() + " PLAYLISTS---\n" +
-                "Walk Like A Badass  \n" +
-                "Rage Beats  \n" +
-                "Arab Mood Booster  \n" +
-                "Sunday Stroll");
+    public static void getPlaylists(Server server) {
+
+        String playlistName = scan.nextLine();
+        String playlist = server.getPlaylist(playlistName);
+
     }
 
-    public static void getCategories() {
-        System.out.println("---CATEGORIES---\n" +
-                "Top Lists\n" +
-                "Pop\n" +
-                "Mood\n" +
-                "Latin");
+    public static void getCategories(Server server) {
+        String jsonCateg = server.getCategories();
+        JsonObject jo = JsonParser.parseString(jsonCateg).getAsJsonObject();
+        JsonObject categ = jo.get("categories").getAsJsonObject();
+
+        for (JsonElement jsonElement : categ.get("items").getAsJsonArray()) {
+            System.out.println(jsonElement.getAsJsonObject().get("name").getAsString());
+        }
     }
 
-    public static void newReleases() {
-        System.out.println("---NEW RELEASES---\n" +
-                "Mountains [Sia, Diplo, Labrinth]\n" +
-                "Runaway [Lil Peep]\n" +
-                "The Greatest Show [Panic! At The Disco]\n" +
-                "All Out Life [Slipknot]");
+    public static void newReleases(Server server) {
+        String body = server.getNewReleases();
+
+            JsonArray itemsArr = JsonParser.parseString(body).getAsJsonObject()
+                    .get("albums").getAsJsonObject()
+                    .get("items").getAsJsonArray();
+
+            List<String> artists = new ArrayList<>();
+
+            for (JsonElement jsonElement : itemsArr) {
+
+                for (JsonElement artist : jsonElement.getAsJsonObject().get("artists").getAsJsonArray()) {
+                    artists.add(artist.getAsJsonObject().get("name").getAsString());
+                }
+
+                System.out.println("\n" + jsonElement.getAsJsonObject().get("name").getAsString());
+                System.out.println(artists.toString());
+                System.out.println(jsonElement.getAsJsonObject().get("external_urls").getAsJsonObject().get("spotify").getAsString());
+                artists.clear();
+            }
     }
 
-    public static void getFeatured() {
-        System.out.println("---FEATURED---\n" +
-                "Mellow Morning\n" +
-                "Wake Up and Smell the Coffee\n" +
-                "Monday Motivation\n" +
-                "Songs to Sing in the Shower");
-    }
+    public static void getFeatured(Server server) {
+        String featured = server.getFeatured();
 
-    public static void exit() {
-        System.out.println("---GOODBYE!---");
+        JsonArray itemsArr = JsonParser.parseString(featured).getAsJsonObject()
+                .get("playlists").getAsJsonObject()
+                .get("items").getAsJsonArray();
+
+        for (JsonElement jsonElement : itemsArr) {
+            System.out.println(jsonElement.getAsJsonObject().get("name").getAsString() + "\n" +
+                    jsonElement.getAsJsonObject().get("external_urls").getAsJsonObject().get("spotify").getAsString() + "\n");
+        }
     }
 }
