@@ -4,24 +4,30 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Scanner;
+import java.util.*;
 
 public class Main {
 
     static Scanner scan = new Scanner(System.in);
+    static Server server = new Server();
 
     public static void main(String[] args) {
-        if (args.length > 1 && "-access".equals(args[0])) {
-            Server.SERVER_PATH = args[1];
+        Map<String, String> cliArg = new HashMap<>();
+
+        if (args.length >= 2) {
+            for (int i = 0; i < args.length; i += 2) {
+                cliArg.put(args[i], args[i + 1]);
+            }
         }
+
+        Server.SERVER_PATH = cliArg.getOrDefault("-access", "https://accounts.spotify.com");
+        Server.API_PATH = cliArg.getOrDefault("-resource", "https://api.spotify.com");
+
         setAction();
     }
 
     public static void setAction() {
 
-    Server server = new Server();
     boolean isAuthorized = false;
     String action;
 
@@ -32,20 +38,20 @@ public class Main {
         } else {
             switch (action) {
                 case "auth":
-                    authorization(server);
+                    authorization();
                     isAuthorized = true;
                     break;
                 case "featured":
-                    getFeatured(server);
+                    getFeatured();
                     break;
                 case "new":
-                    newReleases(server);
+                    newReleases();
                     break;
                 case "categories":
-                    getCategories(server);
+                    getCategories();
                     break;
                 case "playlists":
-                    getPlaylists(server);
+                    getPlaylists();
                     break;
                 case "exit":
                     return;
@@ -54,29 +60,55 @@ public class Main {
     }
 }
 
-    public static void authorization(Server server) {
+    public static void authorization() {
         server.getCode();
         server.getToken();
     }
 
-    public static void getPlaylists(Server server) {
+    public static void getPlaylists() {
+        Map<String, String> categories = new HashMap<>();
+        String playlistName = scan.nextLine().trim();
+        String playlistJson;
+        String categoryID;
 
-        String playlistName = scan.nextLine();
-        String playlist = server.getPlaylist(playlistName);
+        JsonObject categ = JsonParser.parseString(server.getCategories()).getAsJsonObject().get("categories").getAsJsonObject();
+        for (JsonElement jsonElement : categ.get("items").getAsJsonArray()) {
+            categories.put(jsonElement.getAsJsonObject().get("name").getAsString(), jsonElement.getAsJsonObject().get("id").getAsString());
+        }
 
+        if (categories.containsKey(playlistName)) {
+            categoryID = categories.get(playlistName);
+        } else {
+            System.out.println("Unknown category name.");
+            return;
+        }
+
+        playlistJson = server.getPlaylist(categoryID);
+
+        if (playlistJson != null) {
+        JsonObject jo = JsonParser.parseString(playlistJson).getAsJsonObject().get("playlists").getAsJsonObject();
+
+            for (JsonElement jsonElement : jo.get("items").getAsJsonArray()) {
+            System.out.println("\n" + jsonElement.getAsJsonObject().get("name").getAsString() + "\n" +
+                    jsonElement.getAsJsonObject().get("external_urls").getAsJsonObject().get("spotify").getAsString());
+            }
+
+        } else {
+            System.out.println("Error");
+        }
     }
 
-    public static void getCategories(Server server) {
+    public static void getCategories() {
         String jsonCateg = server.getCategories();
         JsonObject jo = JsonParser.parseString(jsonCateg).getAsJsonObject();
         JsonObject categ = jo.get("categories").getAsJsonObject();
 
         for (JsonElement jsonElement : categ.get("items").getAsJsonArray()) {
-            System.out.println(jsonElement.getAsJsonObject().get("name").getAsString());
+            System.out.println("\n" + jsonElement.getAsJsonObject().get("name").getAsString());
         }
     }
 
-    public static void newReleases(Server server) {
+    public static void newReleases() {
         String body = server.getNewReleases();
 
             JsonArray itemsArr = JsonParser.parseString(body).getAsJsonObject()
@@ -98,7 +130,7 @@ public class Main {
             }
     }
 
-    public static void getFeatured(Server server) {
+    public static void getFeatured() {
         String featured = server.getFeatured();
 
         JsonArray itemsArr = JsonParser.parseString(featured).getAsJsonObject()
