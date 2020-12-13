@@ -139,12 +139,6 @@ public class Controller {
             }
         }
 
-//        if (categories.containsKey(name)) {
-//            id = categories.get(name);
-//        } else {
-//            System.out.println("Unknown category name.");
-//        }
-
         return null;
     }
 

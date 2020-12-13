@@ -11,6 +11,8 @@ public class Main {
         boolean isExit = false;
         boolean isAuthorized = false;
         String action;
+        String genre = "";
+        int elemPerPage;
 
         if (args.length >= 2) {
             for (int i = 0; i < args.length; i += 2) {
@@ -20,7 +22,7 @@ public class Main {
 
         Controller.SERVER_PATH = cliArg.getOrDefault("-access", "https://accounts.spotify.com");
         Controller.API_PATH = cliArg.getOrDefault("-resource", "https://api.spotify.com");
-        View.elemPerPage = Integer.parseInt(cliArg.getOrDefault("-page", "5"));
+        elemPerPage = Integer.parseInt(cliArg.getOrDefault("-page", "5"));
 
         while (!isExit) {
             action = scan.next();
@@ -34,16 +36,61 @@ public class Main {
                         isAuthorized = true;
                         break;
                     case "featured":
-                        View.getFeatured();
+                        View.currentAction = View.Actions.FEATURED;
+                        View.printFeatured(true, true, elemPerPage);
                         break;
                     case "new":
-                        View.newReleases();
+                        View.currentAction = View.Actions.NEWRLS;
+                        View.printReleases(true, true, elemPerPage);
                         break;
                     case "categories":
-                        View.getCategories();
+                        View.currentAction = View.Actions.CATEGORIES;
+                        View.printCategories(true, true, elemPerPage);
                         break;
                     case "playlists":
-                        View.getPlaylists(scan.nextLine().trim());
+                        View.currentAction = View.Actions.PLAYLISTS;
+                        genre = scan.nextLine().trim();
+                        View.printPlaylists(genre, true, true, elemPerPage);
+                        break;
+                    case "next":
+                        if (!(View.currentAction == View.Actions.DEFAULT)) {
+                            switch (View.currentAction) {
+                                case NEWRLS:
+                                    View.printReleases(false, true, elemPerPage);
+                                    break;
+                                case FEATURED:
+                                    View.printFeatured(false, true, elemPerPage);
+                                    break;
+                                case PLAYLISTS:
+                                    View.printPlaylists(genre, false, true, elemPerPage);
+                                    break;
+                                case CATEGORIES:
+                                    View.printCategories(false, true, elemPerPage);
+                                    break;
+                                default:
+                                    System.out.println("Error at next page");
+                            }
+                        }
+                        break;
+                    case "prev":
+                        if (!(View.currentAction == View.Actions.DEFAULT)) {
+                            switch (View.currentAction) {
+                                case NEWRLS:
+                                    View.printReleases(false, false, elemPerPage);
+                                    break;
+                                case FEATURED:
+                                    View.printFeatured(false, false, elemPerPage);
+                                    break;
+                                case PLAYLISTS:
+                                    View.printPlaylists(genre, false, false, elemPerPage);
+                                    break;
+                                case CATEGORIES:
+                                    View.printCategories(false, false, elemPerPage);
+                                    break;
+                                default:
+                                    System.out.println("Error at prev page");
+                            }
+                        }
                         break;
                     case "exit":
                         isExit = true;
